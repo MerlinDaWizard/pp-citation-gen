@@ -1,11 +1,7 @@
 #![warn(clippy::pedantic)]
 #![feature(lazy_cell)]
 
-use std::{
-    cell::LazyCell,
-    fs::{write, File, OpenOptions},
-    time::Duration,
-};
+use std::{cell::LazyCell, fs::write, time::Duration};
 
 use ab_glyph::FontRef;
 use image::{
@@ -68,13 +64,20 @@ impl<'a> Default for CitationData<'a> {
 }
 
 fn main() {
+    let citation_blue = CitationData {
+        bg_colour: Rgba([181, 211, 255, 255]),
+        fg_colour: Rgba([84, 87, 92, 255]),
+        decoration_colour: Rgba([136, 173, 231, 255]),
+        ..Default::default()
+    };
+
     let config = CitationData {
         ..Default::default()
     };
     // let img = generate(config);
     // img.save("output.png").unwrap();
 
-    let data = generate_gif(&config);
+    let data = generate_gif(&citation_blue);
     write("output.gif", data).unwrap();
 }
 
@@ -238,7 +241,7 @@ fn generate_gif(config: &CitationData) -> Vec<u8> {
             0,
             0,
             Delay::from_saturating_duration(Duration::from_millis(30)),
-        ))
+        ));
     }
 
     let mut gif_data = Vec::new();
@@ -246,5 +249,5 @@ fn generate_gif(config: &CitationData) -> Vec<u8> {
     encoder.set_repeat(Repeat::Infinite).unwrap();
     encoder.encode_frames(frames).unwrap();
     drop(encoder);
-    return gif_data;
+    gif_data
 }
