@@ -1,0 +1,11 @@
+[package]
+name = "pp-citation-gen"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+pp-citation-lib = { path = "../pp-citation-lib" }
+image = "0.25"
+imageproc = "0.25"
+clap = { version = "4.5.4", features = ["derive"]}
+anyhow = "1.0.86"

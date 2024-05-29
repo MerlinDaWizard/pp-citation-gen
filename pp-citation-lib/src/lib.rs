@@ -1,7 +1,7 @@
 #![warn(clippy::pedantic)]
 #![feature(lazy_cell)]
 
-use std::{cell::LazyCell, fs::write, time::Duration};
+use std::{cell::LazyCell, time::Duration};
 
 use ab_glyph::FontRef;
 use image::{
@@ -15,7 +15,7 @@ use imageproc::{
     map::map_colors,
 };
 
-type ImageType = ImageBuffer<Rgba<u8>, Vec<u8>>;
+pub type ImageType = ImageBuffer<Rgba<u8>, Vec<u8>>;
 
 const STAMP: LazyCell<ImageBuffer<Luma<u8>, Vec<u8>>> = LazyCell::new(|| {
     image::load_from_memory(include_bytes!("../data/stamp.png"))
@@ -29,16 +29,16 @@ const BARCODE: LazyCell<ImageBuffer<Luma<u8>, Vec<u8>>> = LazyCell::new(|| {
 });
 
 pub struct CitationData<'a> {
-    width: u32,
-    height: u32,
-    bg_colour: Rgba<u8>,
-    fg_colour: Rgba<u8>,
-    decoration_colour: Rgba<u8>,
-    font: FontRef<'a>,
-    font_size: f32,
-    header_text: String,
-    violation_text: [Option<String>; 4],
-    punishment_text: String,
+    pub width: u32,
+    pub height: u32,
+    pub bg_colour: Rgba<u8>,
+    pub fg_colour: Rgba<u8>,
+    pub decoration_colour: Rgba<u8>,
+    pub font: FontRef<'a>,
+    pub font_size: f32,
+    pub header_text: String,
+    pub violation_text: [Option<String>; 4],
+    pub punishment_text: String,
 }
 
 impl<'a> Default for CitationData<'a> {
@@ -61,24 +61,6 @@ impl<'a> Default for CitationData<'a> {
             punishment_text: "LAST WARNING - NO PENALTY".to_string(),
         }
     }
-}
-
-fn main() {
-    let citation_blue = CitationData {
-        bg_colour: Rgba([181, 211, 255, 255]),
-        fg_colour: Rgba([84, 87, 92, 255]),
-        decoration_colour: Rgba([136, 173, 231, 255]),
-        ..Default::default()
-    };
-
-    let config = CitationData {
-        ..Default::default()
-    };
-    // let img = generate(config);
-    // img.save("output.png").unwrap();
-
-    let data = generate_gif(&citation_blue);
-    write("output.gif", data).unwrap();
 }
 
 #[must_use]
@@ -224,7 +206,7 @@ fn dotted_column<C>(
     }
 }
 
-fn generate_gif(config: &CitationData) -> Vec<u8> {
+pub fn generate_gif(config: &CitationData) -> Vec<u8> {
     let img = generate(config);
     let mut frames = Vec::new();
     for i in 0..153 {
