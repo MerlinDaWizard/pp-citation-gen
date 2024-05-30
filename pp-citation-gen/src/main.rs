@@ -112,10 +112,5 @@ fn main() -> anyhow::Result<()> {
     } else {
         generate(&config).save(cli.output_file)?
     }
-    // let img = generate(config);
-    // img.save("output.png").unwrap();
-
-    let data = generate_gif(&config);
-    write("output.gif", data).unwrap();
     Ok(())
 }
