@@ -1,7 +1,7 @@
 #![warn(clippy::pedantic)]
 #![feature(lazy_cell)]
-
-use std::{cell::LazyCell, time::Duration};
+mod colour;
+pub use colour::Colour;
 
 use ab_glyph::FontRef;
 use image::{
@@ -14,6 +14,7 @@ use imageproc::{
     drawing::{draw_text_mut, text_size, Canvas},
     map::map_colors,
 };
+use std::{cell::LazyCell, time::Duration};
 
 pub type ImageType = ImageBuffer<Rgba<u8>, Vec<u8>>;
 
@@ -31,14 +32,14 @@ const BARCODE: LazyCell<ImageBuffer<Luma<u8>, Vec<u8>>> = LazyCell::new(|| {
 pub struct CitationData<'a> {
     pub width: u32,
     pub height: u32,
-    pub bg_colour: Rgba<u8>,
-    pub fg_colour: Rgba<u8>,
-    pub decoration_colour: Rgba<u8>,
+    pub bg_colour: Colour,
+    pub fg_colour: Colour,
+    pub decoration_colour: Colour,
     pub font: FontRef<'a>,
     pub font_size: f32,
-    pub header_text: String,
-    pub violation_text: [Option<String>; 4],
-    pub punishment_text: String,
+    pub header_text: &'a str,
+    pub violation_text: [Option<&'a str>; 4],
+    pub punishment_text: &'a str,
 }
 
 impl<'a> Default for CitationData<'a> {
@@ -46,19 +47,19 @@ impl<'a> Default for CitationData<'a> {
         Self {
             width: 366,
             height: 160,
-            bg_colour: Rgba([243, 215, 230, 255]),
-            fg_colour: Rgba([90, 85, 89, 255]),
-            decoration_colour: Rgba([191, 168, 168, 255]),
+            bg_colour: Colour::new(243, 215, 230, 255),
+            fg_colour: Colour::new(90, 85, 89, 255),
+            decoration_colour: Colour::new(191, 168, 168, 255),
             font: FontRef::try_from_slice(include_bytes!("../data/BMmini.TTF")).unwrap(),
             font_size: 16.0,
-            header_text: "M.O.A. CITATION".to_string(),
+            header_text: "M.O.A. CITATION",
             violation_text: [
-                Some("Protocol Violated".to_string()),
-                Some("Entry Permit: Invalid Name".to_string()),
+                Some("Protocol Violated"),
+                Some("Entry Permit: Invalid Name"),
                 None,
                 None,
             ],
-            punishment_text: "LAST WARNING - NO PENALTY".to_string(),
+            punishment_text: "LAST WARNING - NO PENALTY",
         }
     }
 }
@@ -66,12 +67,12 @@ impl<'a> Default for CitationData<'a> {
 #[must_use]
 pub fn generate(config: &CitationData) -> ImageType {
     // Empty image with bg colour.
-    let mut img = RgbaImage::from_pixel(config.width, config.height, config.bg_colour.to_rgba());
+    let mut img = RgbaImage::from_pixel(config.width, config.height, config.bg_colour.0);
 
     // Top dotted line
     dotted_row(
         &mut img,
-        config.decoration_colour,
+        config.decoration_colour.0,
         0,
         0,
         config.width - 2, // -2, one to because 0 index, 1 because 2x2 shape.
@@ -81,7 +82,7 @@ pub fn generate(config: &CitationData) -> ImageType {
     // Bottom dotted line, starts offset one square
     dotted_row(
         &mut img,
-        config.decoration_colour,
+        config.decoration_colour.0,
         config.height - 2, // -2, one to because 0 index, 1 because 2x2 shape.
         2,
         config.width - 2, // -2, one to because 0 index, 1 because 2x2 shape.
@@ -91,42 +92,44 @@ pub fn generate(config: &CitationData) -> ImageType {
 
     // Right side line solid line
     for y in 0..config.height {
-        img.put_pixel(config.width - 1, y, config.decoration_colour);
-        img.put_pixel(config.width - 2, y, config.decoration_colour);
+        img.put_pixel(config.width - 1, y, config.decoration_colour.0);
+        img.put_pixel(config.width - 2, y, config.decoration_colour.0);
     }
 
     // Header end line
-    dotted_row(&mut img, config.fg_colour, 34, 16, 344, 2, 2);
+    dotted_row(&mut img, config.fg_colour.0, 34, 16, 344, 2, 2);
 
     // Stamp
     let coloured_stamp: ImageType = map_colors(&STAMP.clone(), |p| {
         // Not needed with default stamp. But oh well.
         config
             .decoration_colour
+            .0
             .map_with_alpha(|c| c, |a| (f32::from(a) * (f32::from(p.0[0]) / 255.)) as u8)
     });
     overlay(&mut img, &coloured_stamp, 150, 88);
 
     // Side indents
-    dotted_column(&mut img, config.decoration_colour, 4, 6, 150, 6, 12);
-    dotted_column(&mut img, config.decoration_colour, 352, 6, 150, 6, 12);
+    dotted_column(&mut img, config.decoration_colour.0, 4, 6, 150, 6, 12);
+    dotted_column(&mut img, config.decoration_colour.0, 352, 6, 150, 6, 12);
 
     // Barcode
     let coloured_barcode: ImageType = map_colors(&BARCODE.clone(), |p| {
         // Not needed with default barcode. But oh well.
         config
             .fg_colour
+            .0
             .map_with_alpha(|c| c, |a| (f32::from(a) * (f32::from(p.0[0]) / 255.)) as u8)
     });
     overlay(&mut img, &coloured_barcode, 316, 6);
 
     // Crime end line
-    dotted_row(&mut img, config.fg_colour, 114, 16, 344, 2, 2);
+    dotted_row(&mut img, config.fg_colour.0, 114, 16, 344, 2, 2);
 
     // Header text
     draw_text_mut(
         &mut img,
-        config.fg_colour,
+        config.fg_colour.0,
         22,
         8,
         config.font_size,
@@ -139,7 +142,7 @@ pub fn generate(config: &CitationData) -> ImageType {
         if let Some(txt) = txt {
             draw_text_mut(
                 &mut img,
-                config.fg_colour,
+                config.fg_colour.0,
                 22,
                 44 + (18 * idx as i32),
                 config.font_size,
@@ -153,7 +156,7 @@ pub fn generate(config: &CitationData) -> ImageType {
     let width = text_size(2., &config.font, &config.punishment_text).0 as i32;
     draw_text_mut(
         &mut img,
-        config.fg_colour,
+        config.fg_colour.0,
         66 - (width >> 1),
         130,
         config.font_size,
