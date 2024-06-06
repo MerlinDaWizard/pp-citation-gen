@@ -20,10 +20,13 @@ struct Args {
     /// File to write too, will guess format
     #[arg(short, long)]
     output_file: PathBuf,
+    /// A css colour string representing the background colour
     #[arg(short, long, default_value_t = CitationData::default().bg_colour)]
     bg_colour: Colour,
+    /// A css colour string representing the foreground colour
     #[arg(short, long, default_value_t = CitationData::default().fg_colour)]
     fg_colour: Colour,
+    /// A css colour string representing the decoration colour
     #[arg(short, long, default_value_t = CitationData::default().decoration_colour)]
     decoration_colour: Colour,
 }
